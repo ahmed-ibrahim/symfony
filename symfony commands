@@ -1,0 +1,69 @@
+//remove ~ fiels
+find ./ -name '*~' | xargs rm
+
+//cache clear
+app/console cache:clear -e prod
+app/console cache:warmup --no-debug -e prod
+
+//update database
+app/console doctrine:schema:update --force
+
+//Create the Bundle
+app/console generate:bundle --namespace=Acme/HelloBundle
+
+//create entity
+app/console doctrine:generate:entity --entity="AcmeStoreBundle:Product"
+
+//generate set & get
+app/console doctrine:generate:entities AcmeBlogBundle
+app/console doctrine:generate:entities ObjectsPapziBundle:GeneralArticle
+
+//generate form
+app/console generate:doctrine:form AcmeBlogBundle:Post
+
+//load fixtures
+app/console doctrine:fixtures:load --append
+
+//publish in wen
+app/console assets:install web
+
+//creat controller
+app/console generate:doctrine:crud --entity=AcmeBlogBundle:Post --format=yml
+
+//clear cache
+app/console cache:clear -e prod
+app/console cache:warmup --no-debug -e prod
+
+//Including templat
+{{ include('AcmeArticleBundle:Article:articleDetails.html.twig',{ 'article': article }) }}
+
+//render action
+{{ render(controller('AcmeArticleBundle:Article:recentArticles', {
+        'max': 3
+    })) }}
+
+//sonata
+protected function configureRoutes(RouteCollection $collection) {
+   $collection->remove('delete')->remove('edit')->remove('create');
+}
+
+
+//delete dql
+$this->getEntityManager()
+                    ->createQuery('
+            Delete ObjectsStorkBundle:Asset a
+            WHERE a.id in (:assetsIdArray)
+            ')->setParameter('assetsIdArray', $assetsIdArray)->execute();
+
+//update dql
+$this->getEntityManager()->createQuery('
+                UPDATE ObjectsStorkBundle:Client c
+                SET c.surveyNo = (c.surveyNo + 1)
+                WHERE c.id IN(:clientsIds)
+            ')->setParameter('clientsIds', $clientsIds)->execute();
+
+//generate translation
+app/console translation:extract nl --output-dir=./app/Resources/translations/ --dir=./src --dir=./app/Resources/views/
+
+//remove the memory limit as we will need a lot of memory
+        ini_set('memory_limit', '-1');

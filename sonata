@@ -1,0 +1,12 @@
+//get old data
+$em = $this->getModelManager()->getEntityManager($this->getClass());
+        $original = $em->getUnitOfWork()->getOriginalEntityData($object);
+
+//datepicker in filter
+->add('createdAt', 'doctrine_orm_date', array(), null, array('widget' => 'single_text', 'required' => false,  'attr' => array('class' => 'datepicker', 'data-class' => 'date')))
+
+//datepicker in filter range
+$datagridMapper->add('datumUitgevoerd', 'doctrine_orm_datetime_range', array(), null, array('widget' => 'single_text', 'required' => false,  'attr' => array('class' => 'datepicker')));
+
+//date field
+->add('expireAt', 'date', array('required' => false, 'attr' => array('class' => 'datepicker', 'data-class' => 'date'), 'widget' => 'single_text', 'format' => 'yyyy-MM-dd'))

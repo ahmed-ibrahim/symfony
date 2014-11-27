@@ -1,0 +1,36 @@
+{% if lastPageNumber > 1 %}
+    <div class="pagination">
+        {% set paginationParameters = app.request.attributes.get('_route_params') | merge(app.request.query.all()) %}
+        {#% set paginationParameters = {'citySectionSlug': citySectionSlug} | merge(app.request.query.all()) %#}
+
+        {% if page > 1 %}
+        <a href="{{ path(app.request.attributes.get('_route'), paginationParameters | merge({'page': page - 1})) }}" class="Brev">«</a>
+        {% endif %}
+
+        {% if page > 1 and page - 2 > 1 %}
+        <a href="{{ path(app.request.attributes.get('_route'), paginationParameters | merge({'page': 1})) }}">1</a>
+        {% endif %}
+
+        {% if page - 2 > 2 %}
+        <a href="javascript:void(0)" style="cursor: auto;">..</a>
+        {% endif %}
+
+        {% set firstlinkNumber = 1 > page - 2 ? 1 : page - 2 %}
+        {% set lastlinkNumber = lastPageNumber < page + 2 ? lastPageNumber : page + 2 %}
+        {% for numberOfPage in firstlinkNumber..lastlinkNumber %}
+        <a class="num{% if page == numberOfPage %} active{% endif %}" href="{{ path(app.request.attributes.get('_route'), paginationParameters | merge({'page': numberOfPage})) }}">{{ numberOfPage }}</a>
+        {% endfor %}
+
+        {% if page + 3 < lastPageNumber %}
+        <a href="javascript:void(0)" style="cursor: auto;">..</a>
+        {% endif %}
+
+        {% if page + 2 < lastPageNumber %}
+        <a href="{{ path(app.request.attributes.get('_route'), paginationParameters | merge({'page': lastPageNumber})) }}">{{ lastPageNumber }}</a>
+        {% endif %}
+
+        {% if page < lastPageNumber %}
+        <a href="{{ path(app.request.attributes.get('_route'), paginationParameters | merge({'page': page + 1})) }}" class="Next">»</a>
+        {% endif %}
+    </div>
+    {% endif %}

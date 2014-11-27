@@ -1,0 +1,212 @@
+file column install:
+
+1.add this use to your class (if not exist) :
+
+use Symfony\Component\Validator\Constraints as Assert;
+
+
+2.add this line to the entity class annotation (if not exist) :
+
+ * @ORM\HasLifecycleCallbacks
+
+3.add this columns and functions to your entity:
+
+    /**
+     * @var string $fileName
+     *
+     * @ORM\Column(name="fileName", type="string", length=20, nullable=true)
+     */
+    private $fileName;
+
+    /**
+     * a temp variable for storing the old file name to delete the old file after the update
+     * @var string $fileTemp
+     */
+    private $fileTemp;
+
+    /**
+     * @Assert\File
+     * @var \Symfony\Component\HttpFoundation\File\UploadedFile
+     */
+    private $uploadedFile;
+
+    /**
+     * Set fileName
+     *
+     * @param string $fileName
+     * @return $this
+     */
+    public function setFileName($fileName) {
+        $this->fileName = $fileName;
+        return $this;
+    }
+
+    /**
+     * Get fileName
+     *
+     * @return string
+     */
+    public function getFileName() {
+        return $this->fileName;
+    }
+
+    /**
+     * Set file
+     *
+     * @param \Symfony\Component\HttpFoundation\File\UploadedFile $uploadedFile
+     * @return $this
+     */
+    public function setUploadedFile($uploadedFile) {
+        $this->uploadedFile = $uploadedFile;
+        //check if we have an old file
+        if ($this->fileName) {
+            //store the old name to delete on the update
+            $this->fileTemp = $this->fileName;
+            $this->fileName = NULL;
+        } else {
+            $this->fileName = 'initial';
+        }
+        return $this;
+    }
+
+    /**
+     * Get file
+     *
+     * @return \Symfony\Component\HttpFoundation\File\UploadedFile
+     */
+    public function getUploadedFile() {
+        return $this->uploadedFile;
+    }
+
+    /**
+     * this function is used to delete the current file
+     */
+    public function removeUploadedFile() {
+        //check if we have an old file
+        if ($this->fileName) {
+            //store the old name to delete on the update
+            $this->fileTemp = $this->fileName;
+            //delete the current file
+            $this->setFileName(NULL);
+        }
+    }
+
+    /**
+     * create the the directory if not found
+     * @param string $directoryPath
+     * @throws \Exception if the directory can not be created
+     */
+    private function createDirectory($directoryPath) {
+        if (!@is_dir($directoryPath)) {
+            $oldumask = umask(0);
+            $success = @mkdir($directoryPath, 0755, TRUE);
+            umask($oldumask);
+            if (!$success) {
+                throw new \Exception("Can not create the directory $directoryPath");
+            }
+        }
+    }
+
+    /**
+     * @ORM\PrePersist()
+     * @ORM\PreUpdate()
+     */
+    public function preUpload() {
+        if (NULL !== $this->uploadedFile && (NULL === $this->fileName || 'initial' === $this->fileName)) {
+            //get the uploadedFile extension
+            $extension = $this->uploadedFile->guessExtension();
+            //generate a random file name
+            $fileName = uniqid();
+            //get the file upload directory
+            $uploadDir = $this->getFileUploadRootDir();
+            $this->createDirectory($uploadDir);
+            //check that the file name does not exist
+            while (@file_exists("$uploadDir/$fileName.$extension")) {
+                //try to find a new unique name
+                $fileName = uniqid();
+            }
+            //set the file new name
+            $this->fileName = "$fileName.$extension";
+        }
+    }
+
+    /**
+     * @ORM\PostPersist()
+     * @ORM\PostUpdate()
+     */
+    public function upload() {
+        if (NULL !== $this->uploadedFile) {
+            // you must throw an exception here if the file cannot be moved
+            // so that the entity is not persisted to the database
+            // which the UploadedFile move() method does
+            $this->uploadedFile->move($this->getFileUploadRootDir(), $this->fileName);
+            //remove the file as you do not need it any more
+            $this->uploadedFile = NULL;
+        }
+        //check if we have an old file
+        if ($this->fileTemp) {
+            //try to delete the old file
+            @unlink($this->getFileUploadRootDir() . '/' . $this->fileTemp);
+            //clear the temp image
+            $this->fileTemp = NULL;
+        }
+    }
+
+    /**
+     * @ORM\PostRemove()
+     */
+    public function postRemove() {
+        //check if we have a file
+        if ($this->fileName) {
+            //try to delete the file
+            @unlink($this->getFileAbsolutePath());
+        }
+    }
+
+    /**
+     * @return string the path of file starting of root
+     */
+    public function getFileAbsolutePath() {
+        return $this->getFileUploadRootDir() . '/' . $this->fileName;
+    }
+
+    /**
+     * @return string the relative path of file starting from web directory
+     */
+    public function getFileWebPath() {
+        return NULL === $this->fileName ? NULL : $this->getFileUploadDir() . '/' . $this->fileName;
+    }
+
+    /**
+     * @return string the path of upload directory starting of root
+     */
+    public function getFileUploadRootDir() {
+        // the absolute directory path where uploaded documents should be saved
+        return __DIR__ . '/../../../../web/' . $this->getFileUploadDir();
+    }
+
+    /**
+     * @return string the document upload directory path starting from web folder
+     */
+    private function getFileUploadDir() {
+        return 'uploads/files';
+    }
+
+4.edit the function getFileUploadDir returned string.
+
+5.add constrains for the file validation
+
+optional if you have sonata installed:
+
+1.add this line to the configureFormFields function
+
+                ->add('uploadedFile', 'file', array('required' => false, 'label' => 'File'))
+
+2.add this line to configureShowField function
+
+                ->add('fileName', NULL, array('template' => 'ObjectsAdminBundle:General:show_file.html.twig'))
+
+3.add this line to configureListFields function
+
+                ->add('fileName', NULL, array('template' => 'ObjectsAdminBundle:General:list_file.html.twig'))
+

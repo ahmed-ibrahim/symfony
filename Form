@@ -1,0 +1,21 @@
+{% for elementError in form.vars.errors %}
+<div class="alert alert-danger">
+    {{ elementError.message }}<a href="#" class="close" data-dismiss="alert">&times;</a>
+</div>
+{% endfor %}
+=======================================================
+{% for error in form.oldPassword.vars.errors %}
+   <span class="help-block">{{ error.message }}</span>
+{% endfor %}
+
+=======================================================
+->add('SCategory', 'entity', array(
+                    'required' => false,
+                    'class' => 'ObjectsAswaqBundle:CategoryS',
+                    'property' => $fieldName,
+                    'query_builder' => function(EntityRepository $er) use ($categoryId) {
+                        return $er->createQueryBuilder('ch')
+                                ->where("ch.category = '$categoryId'");
+                    }
+                ))
+========================================================
